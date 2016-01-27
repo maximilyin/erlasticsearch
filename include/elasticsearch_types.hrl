@@ -52,16 +52,16 @@
 
 %% struct restRequest
 
--record(restRequest, {method                    :: integer(),
-                      uri                       :: string() | binary(),
-                      parameters = dict:new()   :: dict(),
-                      headers = dict:new()      :: dict(),
-                      body = <<"">>             :: string() | binary()
+-record(restRequest, {method        :: integer(),
+                      uri           :: string() | binary(),
+                      parameters,
+                      headers,
+                      body = <<"">> :: string() | binary()
                      }).
 
 %% struct restResponse
 
 -record(restResponse, {status :: integer(),
-                       headers :: dict(),
+                       headers,
                        body :: undefined | string() | binary()
                       }).

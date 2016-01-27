@@ -1,46 +1,38 @@
-APPLICATION := erlasticsearch
+REBAR=`which rebar`
+DIALYZER=dialyzer
 
-ERL := erl
-EPATH := -pa ebin -pz deps/*/ebin
-TEST_EPATH := -pa .eunit -pz deps/*/ebin
-PLT = .erlastic_search_plt
-ERL_LIB_DIR := $(shell if [ -d /usr/lib/erlang/lib ] ; then echo /usr/lib/erlang/lib ; else echo /usr/local/lib/erlang/lib ; fi)
-PLT_APPS := $(shell ls $(ERL_LIB_DIR) | grep -v interface | sed -e 's/-[0-9.]*//')
+all: get-deps compile
 
-.PHONY: all build-plt compile console deps doc clean depclean distclean dialyze release telstart test test-console
-
-all: compile
+get-deps:
+	@$(REBAR) get-deps
 
 compile:
-	@rebar compile
-
-deps:
-	@rebar get-deps
-
-doc:
-	@rebar skip_deps=true doc
+	@$(REBAR) compile
 
 clean:
-	@rebar skip_deps=true clean
+	@$(REBAR) clean
 
-depclean:
-	@rebar clean
+eunit:
+	@$(REBAR) skip_deps=true eunit
 
-distclean:
-	@rebar delete-deps
+ct:
+	@$(REBAR) skip_deps=true ct
+
+tests: eunit ct
+
+rel: deps compile
+	@$(REBAR) generate
+
+relclean:
+	@rm -rf rel/erlasticsearch
 
 build-plt:
-	@dialyzer --build_plt --apps kernel stdlib sasl crypto ssl inets tools xmerl runtime_tools compiler syntax_tools mnesia public_key
+	@$(DIALYZER) --build_plt --output_plt .erlastic_dialyzer.plt \
+		--apps kernel stdlib sasl #misultin emysql
 
-dialyze: compile
-	@dialyzer -r ebin -r deps/proper -r deps/thrift \
-		-r deps/poolboy -Wno_undefined_callbacks
+dialyze:
+	@$(DIALYZER) --src src --plt .erlastic_dialyzer.plt -Werror_handling \
+		-Wrace_conditions -Wunmatched_returns # -Wunderspecs
 
-test: compile
-	@rebar skip_deps=true ct verbose=1
-
-console:
-	$(ERL) -sname $(APPLICATION) $(EPATH) -config app
-
-test-console: test
-	$(ERL) -sname $(APPLICATION)_test $(TEST_EPATH) -config app
+docs:
+	@$(REBAR) skip_deps=true doc

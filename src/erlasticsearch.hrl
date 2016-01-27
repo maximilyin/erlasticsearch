@@ -13,14 +13,16 @@
 -include("elasticsearch_types.hrl").
 
 
+%% NOTE: The following two definitions, error() and exception(), are
+%% contextually meaningless if there's no specific information or unifying,
+%% generic operation(s) defined.
 -type error()           :: {error, Reason :: any()}.
 -type exception()       :: {exception, Reason :: any()}.
+
 -type method()          :: atom().
 -type rest_response()   :: #restResponse{}.
 -type response()        :: [tuple()] | error().
--type request()         :: #restRequest{}.
--type thrift_host()     :: undefined | string().
--type thrift_port()     :: undefined | integer().
+-type rest_request()    :: #restRequest{}.
 -type connection()      :: any().
 -type node_name()       :: binary().
 -type index()           :: binary().
@@ -28,28 +30,26 @@
 -type id()              :: binary() | undefined.
 -type doc()             :: binary() | list().
 -type params()          :: [tuple()].
--type client_name()     :: binary().
--type registered_pool_name()   :: atom().
--type server_ref()      :: atom() | pid() | client_name().
--type fq_server_ref()   :: {thrift_host(), thrift_port(), server_ref()}.
--type destination()     :: server_ref() | fq_server_ref().
--type pool_name()       :: binary() | fq_server_ref().
--type target()          :: atom() | pid().
+-type pool_name()       :: atom().
 
 
 %% Defaults
--define(DEFAULT_THRIFT_HOST, "localhost").
--define(DEFAULT_THRIFT_PORT, 9500).
+%%% PoolBoy
+-define(DEFAULT_WORKER_TIMEOUT, 5000).
 -define(DEFAULT_POOL_NAME, <<"default_erlasticsearch_pool">>).
 -define(DEFAULT_POOL_OPTIONS, [{size, 5},
                                {max_overflow, 10}
                               ]).
 
+%%% Thrift
+-define(DEFAULT_THRIFT_HOST, "localhost").
+-define(DEFAULT_THRIFT_PORT, 9500).
+-define(DEFAULT_CONNECTION_REFRESH_INTERVAL, 60000).
 -define(DEFAULT_CONNECTION_OPTIONS, [{thrift_host, ?DEFAULT_THRIFT_HOST},
                                      {thrift_port, ?DEFAULT_THRIFT_PORT},
-                                     {binary_response, true}
+                                     {binary_response, true},
+                                     {connection_refresh_interval, ?DEFAULT_CONNECTION_REFRESH_INTERVAL}
                                     ]).
--define(REGISTERED_NAME_PREFIX, "erlasticsearch_").
 
 %% Errors
 -define(NO_SUCH_SEQUENCE, no_such_sequence).
@@ -57,9 +57,10 @@
 %% Methods
 -define(STATE, <<"_cluster/state">>).
 -define(HEALTH, <<"_cluster/health">>).
--define(NODES, <<"_cluster/nodes">>).
--define(STATS, <<"stats">>).
+-define(NODES, <<"_nodes">>).
 -define(STATUS, <<"_status">>).
+-define(STATS, <<"stats">>).
+-define(INDICES_STATS, <<"_stats">>).
 -define(SEARCH, <<"_search">>).
 -define(REFRESH, <<"_refresh">>).
 -define(FLUSH, <<"_flush">>).
@@ -74,6 +75,11 @@
 -define(MAPPING, <<"_mapping">>).
 -define(ALIASES, <<"_aliases">>).
 -define(ALIAS, <<"_alias">>).
+-define(UPDATE, <<"_update">>).
+-define(BULK, <<"_bulk">>).
 
 % Shortcuts
 -define(ALL, <<"_all">>).
+
+-define(POOL_IN_USE_METRIC, <<"erlasticsearch.pool.inuse">>).
+-define(WORKER_DISCONNECTED_METRIC, <<"erlasticsearch.worker.disconnected.">>).

@@ -1,9 +1,11 @@
 ErlasticSearch
 =========
+
 A thrift based erlang client for [ElasticSearch](http://www.elasticsearch.org/).
 
 It incorporates a connection-pool based on [poolboy](https://github.com/devinus/poolboy) - if/when you get down to productizing, you might want to take a look at the pool's `size` and `max_overflow` options
 
+**NOTE** : 1.5.0 for ES 0.9.x;  1.6.0 and higher for ES 1.x
 
 
 Installation
@@ -30,7 +32,10 @@ Add this as a rebar dependency to your project.
    * ```pools```
       * If you are using the default pools, be sure to use the (uncommented) pool settings from ```app.config``` ( ***If you use the default pools, then you will have to start up elasticsearch before the application, otherwise Bad Things™ will happen*** )
 1. Start a pool
-	* ```erlasticsearch:start_pool(<<"some_unique_name_here">>).```
+	* ```erlasticsearch:start_pool(<<"some_unique_name_here">>).```, or
+	* ```erlasticsearch:start_pool({"localhost", 9500, <<"some_unique_name_here">>).```
+	    * of course, _"localhost"_ and _9500_ should be replaced with your actual *thrift_host* and *thrift_port*
+	    * these values for *thrift_host* and *thrift_port* will override any values that you provide in *connection_options*
 1. Profit
 
 
@@ -73,8 +78,8 @@ TL;DR
       * The default is ```binary_response = true```. In this case, you ```{body, Body}``` is just going to contain the entire payload from Elasticsearch as a single binary.
          * e.g. --> ```{body , <<"{\"ok\":true,\"acknowledged\":true}">>}```
       * If you set ```binary_response = false```, ```{body, Body}``` will contain the JSON as a decoded tuple-list (basically, what you get by running ```jsx:decode(Body)```)
-         * ```{body , [ {<<"ok">> , true} , {<<"acknowledged">> , true} ] }```
-
+         * ```{body , [ {<<"ok">> , true} , {<<"acknowledged">> , true} ] }```                  
+1. The default timeout for workers is 5000ms.  If you're ES instance is slow (or you are running CT), you can bump this by setting the `worker_timeout` environment variable (programmatically, or in app.config.  Take a look at `test/erlasticsearch_SUITE.erl:1122`)
 
 
 
@@ -192,6 +197,9 @@ mget_doc/3 | ServerRef, IndexName, Doc  | Gets documents from the ElasticSearch 
 mget_doc/4 | ServerRef, IndexName, TypeName, Doc  | Gets documents from the ElasticSearch cluster index _IndexName_, with type _TypeName_, based on the Id(s) in _Doc_
 delete_doc/4 | ServerRef, IndexName, Type, Id  | Deleset the Doc under _IndexName_, with type _Type_, and id _Id_
 delete_doc/5 | ServerRef, IndexName, Type, Id, Params  | Deletes the Doc under _IndexName_, with type _Type_, and id _Id_, and passes the tuple-list _Params_ to ElasticSearch
+bulk/2 | ServerRef, Doc  | Bulk insert of all the data in _Doc_ (Index and Type defined in _Doc_)
+bulk/3 | ServerRef, IndexName, Doc  | Bulk insert of all the data in _Doc_, with the Index defaulting to _IndexName_ (Type defined in _Doc_)
+bulk/4 | ServerRef, IndexName, TypeName, Doc  | Bulk insert of all the data in _Doc_, with the Index defaulting to _IndexName_ and Type defaulting to _TypeName_
 count/2 | ServerRef, Doc | Counts the docs in the cluster based on the search in _Doc_. (note that if _Doc_ is empty, you get a count of all the docs in the cluster)
 count/3 | ServerRef, Doc, Params | Counts the docs in the cluster based on the search in _Doc_, using _Params_.  Note that either _Doc_ or _Params_ can be empty, but clearly not both :-)
 count/4 | ServerRef, IndexName, Doc, Params | Counts the docs in the cluster based on the search in _Doc_, associated with the index _IndexName_, using _Params_  (Note that a list of Indices can also be sent in (e.g., ```[<<"foo">>, <<"bar">>]```. This list can also be empty - ```[]```)
